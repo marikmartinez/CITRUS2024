@@ -34,7 +34,7 @@ def splitData(dataPath):
     return (allDataNames, trainNames, evalNames)
 
 
-def loadAllImages(treeTypes):
+def loadAllImages():
     allImagesData = []
     for treefolder in os.listdir(upperImagesPath):
         print(treefolder)
@@ -50,20 +50,18 @@ def loadAllImages(treeTypes):
     return np.array(allImagesData)
 
 
-
-
-
-def loadSpecificTreeImages(treeFolder):
+def loadSpecificTreeImages(treeName):
+    treefolder = upperImagesPath + "imagery-" + treeName + os.sep
     treeImageData = []
     for imageFolder in os.listdir(treefolder):
         imageFolder = treefolder + imageFolder
         for tifImage in os.listdir(imageFolder):
-            currImage = tiff.imread(imageFolder + tifImage)
-            print(imageName)
-            currImageArray = np.array(currImage)
-            allImagesData.append(currImageArray)
-    return np.array(allImagesData)
-
+            if tifImage[-4:] == "tiff":
+                currImage = tiff.imread(imageFolder + os.sep + tifImage)
+                print(tifImage)
+                currImageArray = np.array(currImage)
+                treeImageData.append(currImageArray)
+    return np.array(treeImageData)
 
 
 def findImageBandAvg(np_allImageData):

@@ -12,7 +12,7 @@ if __name__ == '__main__':
     # evalNames = open('old_data\\evalImages.txt').read().splitlines()
 
     #allImageNames, trainImageNames, evalImageNames = utils.splitData("old_data\\s2names.txt")
-    allImageNames = open('old_data' + os.sep + 's2names.txt').read().splitlines()
+    #allImageNames = open('old_data' + os.sep + 's2names.txt').read().splitlines()
     #print(len(allImageNames), len(trainImageNames), len(evalImageNames))
     # print(trainNames)
     #print(type(trainNames), type(evalNames))
@@ -41,13 +41,28 @@ if __name__ == '__main__':
             'Quercus_rubra',
             'Robinia_pseudoacacia']
 
+    #load tree data
+    treeData = utils.loadSpecificTreeImages(treeTypes[0])
+    print('band 1:\n')
+    # first array is images, array inside of that is the pixels, the array inside of the pixels is red green and blue and NIR
+    print(treeData[0][:,:,0])
+    print('band 2\n')
+    print(treeData[0][:,:,1])
+    print('band 3:\n')
+    print(treeData[0][:,:,2])
+    print('band 4:\n')
+    print(treeData[0][:,:,3])
+    
+    # LOADS ALL IMAGE DATA
+    # np_allImageData = utils.loadAllImages()
 
-    np_allImageData = utils.loadAllImages(allImageNames)
-    print(np_allImageData.shape)
-    print(np_allImageData[0][:,:,0])
+    #print(np_allImageData.shape)
+    #print(np_allImageData[0][:,:,0])
     #print('max' + str(np_allImageData[:,:,0].max()) + 'min' + str(np_allImageData[:,:,0].min()))
-
+    
+    '''
     #print(type(np_allImageData))
+    # FIND IMAGE BAND AVG
     np_ImgBandAvg = utils.findImageBandAvg(np_allImageData)
     #print(np_ImgBandAvg)
 
@@ -82,7 +97,7 @@ if __name__ == '__main__':
     #scatter plot
     #x is band
     #y is values
-
+    '''
 
 
 
