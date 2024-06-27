@@ -31,33 +31,27 @@ class classifierAI:
 
 class autokerasClassifierAI(classifierAI):
     def __init__(self):
-         self.model = ak.ImageRegressor(output_dim=None, max_trials=3)
+         self.model = ak.ImageClassifier(output_dim=None, max_trials=1)
          self.imagelist = []
          self.annotationList = []
 
     def imagesList(self):
         return self.imagesList
     
-    def loadSpecificTreeRGB(self, treeName):
-        treefolder = utils.upperImagesPath + "imagery-" + treeName + os.sep
-        treeImageData = []
-        for imageFolder in os.listdir(treefolder):
-            imageFolder = treefolder + imageFolder
-            for tifImage in os.listdir(imageFolder):
-                if tifImage[-4:] == "tiff":
-                    currImage = tiff.imread(imageFolder + os.sep + tifImage)
-                    currImageArray = np.array(currImage)
-                    # make empty newImage array
-                    newImage = np.zeros(currImageArray.shape)
-
-                    # add RGB bands to images
-                    newImage[:, :, 0] = currImageArray[:, :, 1]
-                    newImage[:, :, 1] = currImageArray[:, :, 2]
-                    newImage[:, :, 2] = currImageArray[:, :, 3]
-                    print(tifImage)
-                    currImageArray = np.array(currImage)
-                    treeImageData.append(currImageArray)
-        return np.array(treeImageData)
+    def getAnnotations(self, msNames):
+        for tree in utils.treeTypes:
+            for imageName in msNames:
+                if imageName[:len(tree)] == tree:
+                    self.annotationsList.append(tree)
+    
+    def getRGBImages(self, allImagesData):
+        for image in allImagesData:
+            imageWidth, imageHeight, imageBands = image.shape
+            rgbImage = np.zeros(imageWidth, imageHeight, 3)
+            rgbImage[:,:,0] = image[:,:,2]
+            rgbImage[:,:,1] = image[:,:,1]
+            rgbImage[:,:,2] = image[:,:,0]
+            self.imagelist.append(rgbImage)
     
     def loadSplitImages(self):
         treeTypes = ['Abies_alba',
@@ -90,23 +84,29 @@ class autokerasClassifierAI(classifierAI):
             currAnnotation = tempAnnotation
             currAnnotation[count] = 1
             count += 1
-
             # add curr annotation to annotationslist currTreeList.size() times
             for n in range(len(currTreeList)):
                 self.annotationList.append(currAnnotation)            
-            self.imagelist.extend(currTreeList)
+            #self.imagelist.extend(currTreeList)
+            self.imagelist = currTreeList
+            self.train()
+            self.annotationList = []
+
 
 
     # train the model on your old_data
     def train(self):
         annotationArray = np.array(self.annotationList)
         imageArray = np.array(self.imagelist)
-        self.model.fit(imageArray, annotationArray, epochs=1)
+        self.model.fit(imageArray, annotationArray, epochs=3)
+        self.model.summary(expand_nested=True)
 
     def predict(self):
         prediction = self.model.predict(self.predictionList)
         print(prediction)
 
+    def save(self):
+        self.model.save("ak_model", save_format="tf")
 
 
 
@@ -153,3 +153,16 @@ class autokerasClassifierAI(classifierAI):
         self.imageTrainList = imageTrainList
         self.imageEvalList = imageEvalList
 '''
+
+
+
+# TODO:
+# break out the training, test and validation data into 3 different directories
+# data/monosomething/train/treetype
+# data/monosomething/val/treetype
+# data/monosomething/test/treetype
+# 
+# make it so we load 600 megabytes of images, figure out exactly how many images roughly that is by dividing by 200kb
+# need to figure out where to modify loadspecifictreergb and loadsplitdata its gonna be somewhere in between the two maybe both
+#
+# actually start loading the training and validation data seperately

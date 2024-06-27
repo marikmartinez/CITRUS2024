@@ -1,91 +1,75 @@
-import classifierAI
 import utils
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import pandas as pd
+import sys
 
-
-
-machine_learn = True
+if len(sys.argv) < 2:
+    print("usage: ", sys.argv[0], " ml/graph")
+    exit(2)
+if sys.argv[1] == "ml":
+    machine_learn = True
+    makeGraphs = False
+elif sys.argv[1] == "graph":
+    makeGraphs = True
+    machine_learn = False
+else:
+    print("usage: ", sys.argv[0], " ml/graph")
+    exit(3)
 
 
 
 if __name__ == '__main__':
+    bandNames = ["Blue(0)", "Green(1)", "Red(2)", "Near infared(3)", "Red edge(4)", "Band 6(5)", "Band 7(6)", "Band 8A(7)", "SWIR1(8)", "SWIR2(9)", "Aerosol(10)", "Band 9(11)"]
+    
+    treeTypes = ["Abies_alba", "Acer_pseudoplatanus", "Alnus_spec", "Betula_spec", "Cleared", "Fagus_sylvatica", "Fraxinus_excelsior", "Larix_decidua", "Larix_kaempferi", "Picea_abies", "Pinus_nigra", "Pinus_strobus", "Pinus_sylvestris", "Populus_spec", "Prunus_spec", "Pseudotsuga_menziesii", "Quercus_petraea", "Quercus_robur", "Quercus_rubra", "Tilia_spec"]
+    #SENTINEL
+    #band3 = green
+    #band4 = red
+    #band5=red edge
+    #band8 =NIR
+    
+    #treeTypes = treeTypes[:3]
+    #LOAD MONOSPECIFIC FOREST IMAGES (>= 90%)
+    #utils.createMsAnnotations() 
+    msNames = utils.loadTxt("all_ms_names.txt")
+    #print(msNames)
+
+    #print("num of images:" + str(len(msNames)))
+    allImagesData = utils.loadAllImages(msNames)
+    
+    #TODO: save allImagesData as numpy file thing here
+    #print(allImagesData)
+    #print(allImagesData.shape)
+    #print(allImagesData[0].shape)
     if machine_learn:
+        import classifierAI
         akClassifier = classifierAI.autokerasClassifierAI()
-        akClassifier.loadSplitImages()
+        akClassifier.getRGBImages(allImagesData)
+        akClassifier.getAnnotations(msNames)
         akClassifier.train()
+        akClassifier.save()
+    elif makeGraphs:
+        #make graphs
+        #find average ndvi for all images of each tree type
+        #print(nvdiAveragesPerTreeList)
+        #treeTypes.append("all")
+        #nvdiAveragesPerTreeList.append(avgImgNvdi)
+        #TODO: assign colors for each tree type
 
-        #print(allImageNames)
-    else:
-        treeTypes = ['Abies_alba',
-                'Abies_nordmannaniana',
-                'Castanea_sativa',
-                'Fagus_sylvatica',
-                'Larix_decidua',
-                'Picea_abies',
-                'Pinus_halepensis', 
-                'Pinus_nigra', 
-                'Pinus_nigra_laricio', 
-                'Pinus_pinaster', 
-                'Pinus_sylvestris', 
-                'Pseudotsuga_menziesii', 
-                'Quercus_ilex', 
-                'Quercus_petraea', 
-                'Quercus_pubescens',
-                'Quercus_robur',
-                'Quercus_robur',
-                'Quercus_rubra',
-                'Robinia_pseudoacacia']
-            
-        #load tree data
-        '''
-        for treeName in treeTypes:
-            treeData = utils.loadSpecificTreeImages(treeName)
-        '''    
-        # LOADS ALL IMAGE DATA
+        utils.makeAvgNdviGraph(treeTypes, msNames, allImagesData, True)
+        utils.makeAvgNdviGraph(treeTypes, msNames, allImagesData, False)
+    
+        utils.makeAvgEviGraph(treeTypes, msNames, allImagesData)
+        utils.makeAvgNdwiGraph(treeTypes, msNames, allImagesData)
+        utils.makeAvgRendviGraph(treeTypes, msNames, allImagesData)
+        #utils.makeAvgReflectanceGraph(treeTypes, msNames, allImagesData)
+# bar graph with treeTypes as the labels and nvdiAveragesPerTreeList as the values   
 
-        for tree in treeTypes:
-            np_allImageData = utils.loadSpecificTreeImages(treeTypes[0])
-            #print(type(np_allImageData))
-            # FIND IMAGE BAND AVG
-            np_ImgBandAvg = utils.findImageBandAvg(np_allImageData)
-            #print(np_ImgBandAvg)
+        #find average, but excluding values less than a certain decimal for better accuracy
 
-            plotKeys = {"blue": np.mean(np_ImgBandAvg[:, 0]), "green": np.mean(np_ImgBandAvg[:, 1]),
-                        "red": np.mean(np_ImgBandAvg[:, 2]), "NIR": np.mean(np_ImgBandAvg[:, 3])}
-                                        
-            x = list(plotKeys.keys())
-            y = list(plotKeys.values())
-
-            #bar graph ALL BANDS
-            fig = plt.figure(figsize=(10, 5))
-            plt.bar(x, y, width=0.4, color='brown')
-
-            plt.title("Average Band Values Per image with " + tree)
-            plt.xlabel("Multispectral Bands")
-            plt.ylabel("Avg Value Per Image")
-            plt.savefig('graphs' + os.sep + tree + 'AllBandAvg.png')
-
-            #bar graph RGB
-
-            #scaledRGB = utils.scaleRGB(y[:3])
-            fig = plt.figure(figsize=(10, 5))
-            plt.bar(x[:3], y[:3], color='blue')
-            plt.title("Average RBG Band Values Per Image with " + tree)
-            plt.xlabel("RBG Bands")
-            plt.ylabel("Avg % reflectance")
-            plt.savefig('graphs' + os.sep + tree + 'RBGBandAvg.png')
-
-            #bar graph for trees
-            #avg band values for each tree type
-
-            #scatter plot
-            #x is band
-            #y is values
-
-
-
+        #maybe also calculate other indexes
 
 
 

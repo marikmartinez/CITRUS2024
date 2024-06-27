@@ -164,8 +164,15 @@ cython_debug/
 #data (place where images are stored)
 data/
 old_data/
+graphs/
+old_data_2/
 
 #swap files for vim
 *.swp
 *.swo
 
+#old main file
+old_main.py
+
+#error output file
+error.out
