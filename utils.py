@@ -13,6 +13,7 @@ msLabelPath = dataPath + "allDataNames.txt"
 imagesPath = dataPath + "60m"
 
 treeLabels = ["Abies alba", "Acer pseudoplatanus", "Alnus spec", "Betula spec", "Cleared", "Fagus sylvatica", "Fraxinus excelsior", "Larix decidua", "Larix kaempferi", "Picea abies", "Pinus nigra", "Pinus strobus", "Pinus sylvestris", "Populus spec", "Prunus spec", "Pseudotsuga menziesii", "Quercus petraea", "Quercus robur", "Quercus rubra", "Tilia spec"]
+treePaths = ["Abies_alba", "Acer_pseudoplatanus", "Alnus_spec", "Betula_spec", "Cleared", "Fagus_sylvatica", "Fraxinus_excelsior", "Larix_decidua", "Larix_kaempferi", "Picea_abies", "Pinus_nigra", "Pinus_strobus", "Pinus_sylvestris", "Populus_spec", "Prunus_spec", "Pseudotsuga_menziesii", "Quercus_petraea", "Quercus_robur", "Quercus_rubra", "Tilia_spec"]
 
 colorList =  [
     '#377eb8', '#ff7f00', '#4daf4a', '#f781bf', '#a65628',
@@ -25,6 +26,8 @@ color_mapping = dict(zip(treeLabels, colorList))
 
 # splits the image names into two different files, one for predictions and one for training
 # TODO: rename eval stuff to prediction stuff
+#OLD SPLIT DATA
+'''
 def splitData(dataPath):
     allDataNames = open(dataPath).read().splitlines()
     random.shuffle(allDataNames)
@@ -41,6 +44,8 @@ def splitData(dataPath):
             outFile.write(filename)
             outFile.write('\n')
     return (allDataNames, trainNames, evalNames)
+'''
+
 
 #OLD LOADALLIMAGES
 '''
@@ -60,14 +65,104 @@ def loadAllImages():
     return np.array(allImagesData)
 '''
 
+def splitData():
+    trainList = []
+    evalList = []
+
+    allDataPath = dataPath + "all_image_data.npz"
+    loadedData = np.load(allDataPath)
+    msNames = loadedData['paths']
+    allImagesData = loadedData['data']
+
+    dataDict = dict(zip(msNames, allImagesData))
+    print("total data: ", len(msNames))
+    for tree in treePaths:
+        treePathList = []
+        for imageName in msNames:
+            if imageName[:len(tree)] == tree:
+                treePathList.append(imageName)
+        #output names into files
+        print(tree, ": ", len(treePathList))
+        filePath = dataPath + "monospecific_treetype_lists" + os.sep + tree + ".txt"
+        with open(filePath, 'w') as file:
+            for path in treePathList:
+                file.write(path + '\n')
+        
+        #split 90:10 for each tree type
+        random.shuffle(treePathList)
+        splitIndex = int(len(treePathList)*0.9)
+        trainList.extend(treePathList[:splitIndex])
+        print("train #: ", len(treePathList[:splitIndex]))
+        evalList.extend(treePathList[splitIndex:])
+        print("eval #: ", len(treePathList[splitIndex:]))
+        
+    random.shuffle(trainList)
+    random.shuffle(evalList)
+    
+    #loading into npz files
+    print("eval data total: ", len(evalList))
+    evalData = []
+    for path in evalList:
+        dataForPath = dataDict[path]
+        print(dataForPath)
+        evalData.append(dataForPath)
+    
+    np_evalList = np.array(evalList)
+    np_evalData = np.array(evalData)
+    evalDataPath = dataPath + "eval_data.npz"
+    np.savez(evalDataPath, paths=np_evalList, data=np_evalData)
+    
+    print("train data total: ", len(trainList))
+    trainData = []
+    for path in trainList:
+        dataForPath = dataDict[path]
+        trainData.append(dataForPath)
+    
+    np_trainList = np.array(trainList)
+    np_trainData = np.array(trainData)
+    trainDataPath = dataPath + "train_data.npz"
+    np.savez(trainDataPath, paths=np_trainList, data=np_trainData)
+    
+
+def calculateIndexes(imageData):
+    allImageVegetationIndexes = []
+    for imageData in dataArray:
+        vegetationIndexes = np.zeros(5)
+        vegetationIndexes[0] = calculateNdviMean(imageData)
+        vegetationIndexes[1] = calculateEviMean(imageData)
+        vegetationIndexes[2] = calculateNdwiMean(imageData)
+        vegetationIndexes[3] = calculateRendviMean(imageData)
+        
+        allImageVegetationIndexes.append(vegetationIndexes)
+    
+    return allImageVegetationIndexes
+
+
 def loadAllImages(msNames):
     allImagesData = []
+    cleanedMsNames = []
     for fileName in msNames:
         currImage = tiff.imread(imagesPath + os.sep + fileName)
         np_currImage = np.array(currImage)
+        np_currImage = np_currImage / 10000
+        if np_currImage.mean() < 0.003:
+            continue
+        else:
+            allImagesData.append(np_currImage)
+            cleanedMsNames.append(fileName)
+    np_allImagesData = np.array(allImagesData)
+    
+    np_cleanedMsNames = np.array(cleanedMsNames)
+    #saving into an .npz file
+    np_msNames = np.array(msNames)
+    allImageDataPath = dataPath + "all_image_data.npz"
+    np.savez(allImageDataPath, paths=np_cleanedMsNames, data=np_allImagesData)
 
-        allImagesData.append(np_currImage / 10000)
-    return np.array(allImagesData)
+    #save file names into a .npy file
+    allCleanedMsNamesDataPath = dataPath + "all_cleaned_ms_names.npy"
+    np.save(allCleanedMsNamesDataPath, np_cleanedMsNames)
+
+    return np_allImagesData, cleanedMsNames
 
 def calculateNdviMean(imageData, filter):
     ndviArray = []
@@ -89,20 +184,6 @@ def calculateNdviMean(imageData, filter):
     np_avgImgNdvi = np.array(ndviArray).mean()
     
     return np_avgImgNdvi
-
-def loadSpecificTreeImages(treeName):
-    treefolder = upperImagesPath + "imagery-" + treeName + os.sep
-    treeImageData = []
-    for imageFolder in os.listdir(treefolder):
-        imageFolder = treefolder + imageFolder
-        for tifImage in os.listdir(imageFolder):
-            if tifImage[-4:] == "tiff":
-                currImage = tiff.imread(imageFolder + os.sep + tifImage)
-                print(tifImage)
-                currImageArray = np.array(currImage)
-                treeImageData.append(currImageArray)
-    return np.array(treeImageData)
-
 
 def findImageBandAvg(np_allImageData):
     imageWidth, imageHeight, imageBands = np_allImageData[0].shape
@@ -202,7 +283,7 @@ def makeAvgNdviGraph(treeTypes, msNames, allImagesData, filter):
     sortedTreeLabels = list(sorted_list2)    
     
     # creating the bar plot
-    fig = plt.figure(figsize = (20, 15))
+    fig = plt.figure(figsize = (10, 15))
     colors = [color_mapping[label] for label in sortedTreeLabels]
     plt.bar(sortedTreeLabels,ndviAveragesPerTreeList, color=colors, width = 0.8)
     plt.xlabel("Species Classes")
@@ -264,7 +345,7 @@ def makeAvgEviGraph(treeTypes, msNames, allImagesData):
     sortedTreeLabels = list(sorted_list2)    
 
     # creating the bar plot
-    fig = plt.figure(figsize = (20, 15))
+    fig = plt.figure(figsize = (10, 15))
     colors = [color_mapping[label] for label in sortedTreeLabels]
     plt.bar(sortedTreeLabels,eviAveragesPerTreeList, color=colors, width = 0.8)
     plt.xlabel("Species Classes")
@@ -323,7 +404,7 @@ def makeAvgNdwiGraph(treeTypes, msNames, allImagesData):
     sortedTreeLabels = list(sorted_list2)    
 
     # creating the bar plot
-    fig = plt.figure(figsize = (20, 15))
+    fig = plt.figure(figsize = (10, 15))
     colors = [color_mapping[label] for label in sortedTreeLabels]
     plt.bar(sortedTreeLabels,ndwiAveragesPerTreeList, color=colors, width = 0.8)
     plt.xlabel("Species Classes")
@@ -379,7 +460,7 @@ def makeAvgRendviGraph(treeTypes, msNames, allImagesData):
     sortedTreeLabels = list(sorted_list2)    
 
     # creating the bar plot
-    fig = plt.figure(figsize = (20, 15))
+    fig = plt.figure(figsize = (15, 15))
     colors = [color_mapping[label] for label in sortedTreeLabels]
     plt.bar(sortedTreeLabels,rendviAveragesPerTreeList, color=colors, 
         width = 0.8)

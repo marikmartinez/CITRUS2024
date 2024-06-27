@@ -33,11 +33,27 @@ if __name__ == '__main__':
     #treeTypes = treeTypes[:3]
     #LOAD MONOSPECIFIC FOREST IMAGES (>= 90%)
     #utils.createMsAnnotations() 
-    msNames = utils.loadTxt("all_ms_names.txt")
+    
+    #Loads old ms names
+    #msNames = utils.loadTxt("all_ms_names.txt")
     #print(msNames)
-
+    
     #print("num of images:" + str(len(msNames)))
-    allImagesData = utils.loadAllImages(msNames)
+    
+    #loads cleaned data
+    #allImagesData, cleanedMsNames = utils.loadAllImages(msNames)
+    
+    #splitting data
+    utils.splitData()
+
+    #loading cleaned data from npz
+    
+    dataPath = "data" + os.sep + "all_image_data.npz"
+    loaded = np.load(dataPath)
+    msNames = loaded['paths']
+    allImagesData = loaded['data']
+    print("ms names:", len(msNames))
+
     
     #TODO: save allImagesData as numpy file thing here
     #print(allImagesData)
@@ -52,24 +68,15 @@ if __name__ == '__main__':
         akClassifier.save()
     elif makeGraphs:
         #make graphs
-        #find average ndvi for all images of each tree type
-        #print(nvdiAveragesPerTreeList)
-        #treeTypes.append("all")
-        #nvdiAveragesPerTreeList.append(avgImgNvdi)
-        #TODO: assign colors for each tree type
-
-        utils.makeAvgNdviGraph(treeTypes, msNames, allImagesData, True)
-        utils.makeAvgNdviGraph(treeTypes, msNames, allImagesData, False)
+        
+        #utils.makeAvgNdviGraph(treeTypes, msNames, allImagesData, True)
+        #utils.makeAvgNdviGraph(treeTypes, msNames, allImagesData, False)
     
-        utils.makeAvgEviGraph(treeTypes, msNames, allImagesData)
-        utils.makeAvgNdwiGraph(treeTypes, msNames, allImagesData)
-        utils.makeAvgRendviGraph(treeTypes, msNames, allImagesData)
-        #utils.makeAvgReflectanceGraph(treeTypes, msNames, allImagesData)
-# bar graph with treeTypes as the labels and nvdiAveragesPerTreeList as the values   
+        #utils.makeAvgEviGraph(treeTypes, msNames, allImagesData)
+        #utils.makeAvgNdwiGraph(treeTypes, msNames, allImagesData)
+        #utils.makeAvgRendviGraph(treeTypes, msNames, allImagesData)
+        utils.makeAvgReflectanceGraph(treeTypes, msNames, allImagesData)
 
-        #find average, but excluding values less than a certain decimal for better accuracy
-
-        #maybe also calculate other indexes
 
 
 

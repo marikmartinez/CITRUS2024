@@ -53,47 +53,6 @@ class autokerasClassifierAI(classifierAI):
             rgbImage[:,:,2] = image[:,:,0]
             self.imagelist.append(rgbImage)
     
-    def loadSplitImages(self):
-        treeTypes = ['Abies_alba',
-            'Abies_nordmanniana',
-            'Castanea_sativa',
-            'Fagus_sylvatica',
-            'Larix_decidua',
-            'Picea_abies',
-            'Pinus_halepensis', 
-            'Pinus_nigra', 
-            'Pinus_nigra_laricio', 
-            'Pinus_pinaster', 
-            'Pinus_sylvestris', 
-            'Pseudotsuga_menziesii', 
-            'Quercus_ilex', 
-            'Quercus_petraea', 
-            'Quercus_pubescens',
-            'Quercus_robur',
-            'Quercus_robur',
-            'Quercus_rubra',
-            'Robinia_pseudoacacia']
-        
-        tempAnnotation = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        count = 0
-        treeTypes = [treeTypes[0]]
-        for treeName in treeTypes:
-            # loads in the imagesas a numpy array
-            currTreeList = self.loadSpecificTreeRGB(treeName)
-            
-            currAnnotation = tempAnnotation
-            currAnnotation[count] = 1
-            count += 1
-            # add curr annotation to annotationslist currTreeList.size() times
-            for n in range(len(currTreeList)):
-                self.annotationList.append(currAnnotation)            
-            #self.imagelist.extend(currTreeList)
-            self.imagelist = currTreeList
-            self.train()
-            self.annotationList = []
-
-
-
     # train the model on your old_data
     def train(self):
         annotationArray = np.array(self.annotationList)
