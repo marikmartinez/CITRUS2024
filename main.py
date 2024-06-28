@@ -44,16 +44,15 @@ if __name__ == '__main__':
     #allImagesData, cleanedMsNames = utils.loadAllImages(msNames)
     
     #splitting data
-    utils.splitData()
+    #utils.splitData()   
+    
+    #calculating and outputting indexes
+    #trainIndexes = calculateIndexes
 
     #loading cleaned data from npz
-    
-    dataPath = "data" + os.sep + "all_image_data.npz"
-    loaded = np.load(dataPath)
-    msNames = loaded['paths']
-    allImagesData = loaded['data']
-    print("ms names:", len(msNames))
-
+    msNames, allImagesData = utils.loadNp("train_data.npz")
+    print(allImagesData[0] * 10000)
+    #print(msNames, allImagesData)
     
     #TODO: save allImagesData as numpy file thing here
     #print(allImagesData)
@@ -68,15 +67,20 @@ if __name__ == '__main__':
         akClassifier.save()
     elif makeGraphs:
         #make graphs
+        dataPath = "data" + os.sep + "all_image_data.npz"
+        loaded = np.load(dataPath)
+        msNames = loaded['paths']
+        allImagesData = loaded['data']
+        print("ms names:", len(msNames))
         
         #utils.makeAvgNdviGraph(treeTypes, msNames, allImagesData, True)
         #utils.makeAvgNdviGraph(treeTypes, msNames, allImagesData, False)
     
         #utils.makeAvgEviGraph(treeTypes, msNames, allImagesData)
         #utils.makeAvgNdwiGraph(treeTypes, msNames, allImagesData)
-        #utils.makeAvgRendviGraph(treeTypes, msNames, allImagesData)
-        utils.makeAvgReflectanceGraph(treeTypes, msNames, allImagesData)
-
+        utils.makeAvgRendviGraph(treeTypes, msNames, allImagesData)
+        #utils.makeAvgReflectanceGraph(treeTypes, msNames, allImagesData)
+        #utils.makeSplitGraph()
 
 
 

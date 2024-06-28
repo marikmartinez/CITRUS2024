@@ -162,7 +162,7 @@ cython_debug/
 .idea/
 
 #data (place where images are stored)
-data/
+
 old_data/
 graphs/
 old_data_2/

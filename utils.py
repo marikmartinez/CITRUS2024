@@ -68,6 +68,7 @@ def loadAllImages():
 def splitData():
     trainList = []
     evalList = []
+    allTreeSplitInfo = []
 
     allDataPath = dataPath + "all_image_data.npz"
     loadedData = np.load(allDataPath)
@@ -87,7 +88,7 @@ def splitData():
         with open(filePath, 'w') as file:
             for path in treePathList:
                 file.write(path + '\n')
-        
+        treeSplitInfo = np.zeros(3)
         #split 90:10 for each tree type
         random.shuffle(treePathList)
         splitIndex = int(len(treePathList)*0.9)
@@ -96,6 +97,16 @@ def splitData():
         evalList.extend(treePathList[splitIndex:])
         print("eval #: ", len(treePathList[splitIndex:]))
         
+        treeSplitInfo[0] = len(treePathList)
+        treeSplitInfo[1] = len(treePathList[:splitIndex])
+        treeSplitInfo[2] = len(treePathList[splitIndex:])
+        allTreeSplitInfo.append(treeSplitInfo)
+    
+    #load treesplitinfo into a npz
+    np_allTreeSplitInfo = np.array(allTreeSplitInfo)
+    treeSplitDataPath = dataPath + "tree_split.npz"
+    np.savez(treeSplitDataPath, paths=treeLabels, data=np_allTreeSplitInfo)
+
     random.shuffle(trainList)
     random.shuffle(evalList)
     
@@ -104,7 +115,6 @@ def splitData():
     evalData = []
     for path in evalList:
         dataForPath = dataDict[path]
-        print(dataForPath)
         evalData.append(dataForPath)
     
     np_evalList = np.array(evalList)
@@ -127,16 +137,22 @@ def splitData():
 def calculateIndexes(imageData):
     allImageVegetationIndexes = []
     for imageData in dataArray:
-        vegetationIndexes = np.zeros(5)
+        vegetationIndexes = np.zeros(4)
         vegetationIndexes[0] = calculateNdviMean(imageData)
         vegetationIndexes[1] = calculateEviMean(imageData)
         vegetationIndexes[2] = calculateNdwiMean(imageData)
         vegetationIndexes[3] = calculateRendviMean(imageData)
         
         allImageVegetationIndexes.append(vegetationIndexes)
-    
+
     return allImageVegetationIndexes
 
+def loadNp(path):
+    arrayPath = dataPath + path
+    loaded = np.load(arrayPath)
+    labels = loaded['paths']
+    data = loaded['data']
+    return labels, data
 
 def loadAllImages(msNames):
     allImagesData = []
@@ -534,6 +550,33 @@ def makeAvgReflectanceGraph(treeTypes, msNames, allImagesData):
     plt.title("Mean Reflectance for Species Classes")
     plt.savefig("graphs/reflectance_mean.png")
     
+def makeSplitGraph():
+    splitDataPath = "tree_split.npz"
+    labels, data = loadNp(splitDataPath)
+    
+    trainSplit = data[:, 1]
+    evalSplit = data[:, 2]
+    
+    combined = list(zip(trainSplit, evalSplit, labels))
+    combined.sort(reverse=True)
+
+    array1, array2, array3= zip(*combined)
+    trainSplit = list(array1)
+    evalSplit = list(array2)
+    labels = list(array3)   
+
+    fig = plt.figure(figsize = (15, 15))
+    plt.bar(labels, trainSplit, color="orange", label = "Train")
+    plt.bar(labels, evalSplit, bottom=trainSplit, label = "Eval")
+    
+
+    plt.xlabel("Species Classes")
+    plt.xticks(rotation=45, ha='right')
+    plt.ylabel("Train and Evaluation Images")
+    plt.title("Train and Evaluation Split For All Species Classes")
+    plt.legend()
+
+    plt.savefig("graphs" + os.sep + "data_split_graph.png")
 
 
 

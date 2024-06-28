@@ -3,7 +3,6 @@ import tensorflow as tf
 import autokeras as ak
 import PIL
 import numpy as np
-import tifffile as tiff
 import json
 import matplotlib.pyplot as plt
 import utils
@@ -31,7 +30,7 @@ class classifierAI:
 
 class autokerasClassifierAI(classifierAI):
     def __init__(self):
-         self.model = ak.ImageClassifier(output_dim=None, max_trials=1)
+         self.model = ak.ImageClassifier(max_trials=20)
          self.imagelist = []
          self.annotationList = []
 
@@ -42,12 +41,12 @@ class autokerasClassifierAI(classifierAI):
         for tree in utils.treeTypes:
             for imageName in msNames:
                 if imageName[:len(tree)] == tree:
-                    self.annotationsList.append(tree)
+                    self.annotationList.append(tree)
     
     def getRGBImages(self, allImagesData):
         for image in allImagesData:
             imageWidth, imageHeight, imageBands = image.shape
-            rgbImage = np.zeros(imageWidth, imageHeight, 3)
+            rgbImage = np.zeros((6, 6, 3))
             rgbImage[:,:,0] = image[:,:,2]
             rgbImage[:,:,1] = image[:,:,1]
             rgbImage[:,:,2] = image[:,:,0]
@@ -55,18 +54,22 @@ class autokerasClassifierAI(classifierAI):
     
     # train the model on your old_data
     def train(self):
-        annotationArray = np.array(self.annotationList)
-        imageArray = np.array(self.imagelist)
-        self.model.fit(imageArray, annotationArray, epochs=3)
-        self.model.summary(expand_nested=True)
+        with tf.device('/device:GPU:0'):
+            annotationArray = np.array(self.annotationList)
+            imageArray = np.array(self.imagelist)
+            self.model.fit(imageArray, annotationArray, epochs=5)
+            historyDict = self.model.history
+
+        with open("sample.json", "w") as outfile: 
+            json.dump(historyDict, outfile)
 
     def predict(self):
         prediction = self.model.predict(self.predictionList)
         print(prediction)
 
     def save(self):
-        self.model.save("ak_model", save_format="tf")
-
+        #self.model.save("ak_model", save_format="tf")
+        pass
 
 
 '''
