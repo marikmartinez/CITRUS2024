@@ -42,6 +42,7 @@ class autokerasClassifierAI(classifierAI):
             for imageName in msNames:
                 if imageName[:len(tree)] == tree:
                     self.annotationList.append(tree)
+
     
     def getRGBImages(self, allImagesData):
         for image in allImagesData:

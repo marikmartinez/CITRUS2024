@@ -85,9 +85,11 @@ def splitData():
         #output names into files
         print(tree, ": ", len(treePathList))
         filePath = dataPath + "monospecific_treetype_lists" + os.sep + tree + ".txt"
+
         with open(filePath, 'w') as file:
             for path in treePathList:
                 file.write(path + '\n')
+
         treeSplitInfo = np.zeros(3)
         #split 90:10 for each tree type
         random.shuffle(treePathList)
@@ -134,18 +136,18 @@ def splitData():
     np.savez(trainDataPath, paths=np_trainList, data=np_trainData)
     
 
-def calculateIndexes(imageData):
-    allImageVegetationIndexes = []
+def calculateIndices(treeTypes, msNames, imageData, averagePixels):
+    allImageVegetationIndices = []
     for imageData in dataArray:
-        vegetationIndexes = np.zeros(4)
-        vegetationIndexes[0] = calculateNdviMean(imageData)
-        vegetationIndexes[1] = calculateEviMean(imageData)
-        vegetationIndexes[2] = calculateNdwiMean(imageData)
-        vegetationIndexes[3] = calculateRendviMean(imageData)
+        vegetationIndices = np.zeros(4)
+        vegetationIndices[0] = calculateNdviMean(imageData, False, averagePixels)
+        vegetationIndices[1] = calculateEviMean(imageData, averagePixels)
+        vegetationIndices[2] = calculateNdwiMean(imageData, averagePixels)
+        vegetationIndices[3] = calculateRendviMean(imageData, averagePixels)
         
-        allImageVegetationIndexes.append(vegetationIndexes)
+        allImageVegetationIndices.append(vegetationIndices)
 
-    return allImageVegetationIndexes
+    return allImageVegetationIndices
 
 def loadNp(path):
     arrayPath = dataPath + path
@@ -180,9 +182,9 @@ def loadAllImages(msNames):
 
     return np_allImagesData, cleanedMsNames
 
-def calculateNdviMean(imageData, filter):
+def calculateNdviMean(imageData, filter, averagePixels):
     ndviArray = []
-
+    ndviArray_notAvg = []
     for currImage in imageData:
         #changed into np array
         np_imageNdvi = np.array((currImage[:,:,3] - currImage[:,:,2])/(currImage[:,:,3] + currImage[:,:,2]))
@@ -196,10 +198,14 @@ def calculateNdviMean(imageData, filter):
                 ndviArray.append(np_filtered_imageNdvi.mean())
         else:
             ndviArray.append(np_imageNdvi.mean())
+            ndviArray_notAvg.append(np_imageNdvi)
+    if averagePixels:
+        np_avgImgNdvi = np.array(ndviArray).mean()
+        return np_avgImgNdvi
 
-    np_avgImgNdvi = np.array(ndviArray).mean()
-    
-    return np_avgImgNdvi
+    else:
+        return ndviArray_notAvg
+
 
 def findImageBandAvg(np_allImageData):
     imageWidth, imageHeight, imageBands = np_allImageData[0].shape
@@ -284,7 +290,7 @@ def makeAvgNdviGraph(treeTypes, msNames, allImagesData, filter):
               currTreeImagesList.append(allImagesData[index])
             index += 1
         print(len(currTreeImagesList))
-        ndviAveragesPerTreeList.append(calculateNdviMean(currTreeImagesList, filter))
+        ndviAveragesPerTreeList.append(calculateNdviMean(currTreeImagesList, filter, True))
 
     paired_lists = list(zip(ndviAveragesPerTreeList, treeLabels))
 
@@ -314,8 +320,9 @@ def makeAvgNdviGraph(treeTypes, msNames, allImagesData, filter):
         plt.savefig("graphs/ndvi_mean.png")
 
 #TODO: make this into EVI, NDWI, RENDVI
-def calculateEviMean(imageData):
+def calculateEviMean(imageData, averagePixels):
     eviArray = []
+    eviArray_notAvg = []
     invalidImgCounter = 0
     for currImage in imageData:
         #changed into np array
@@ -327,10 +334,12 @@ def calculateEviMean(imageData):
             continue
         #print(np_imageEvi)
         eviArray.append(np_imageEvi.mean())
-
-    np_avgImgEvi = np.array(eviArray).mean()
-    
-    return np_avgImgEvi
+        eviArray_notAvg.append(np_imageEvi)
+    if averagePixels:
+        np_avgImgEvi = np.array(eviArray).mean()
+        return np_avgImgEvi
+    else:
+        return np.array(eviArray_notAvg)
 
 def makeAvgEviGraph(treeTypes, msNames, allImagesData):
     treeLabels = ["Abies alba", "Acer pseudoplatanus", "Alnus spec", "Betula spec", "Cleared", "Fagus sylvatica", "Fraxinus excelsior", "Larix decidua", "Larix kaempferi", "Picea abies", "Pinus nigra", "Pinus strobus", "Pinus sylvestris", "Populus spec", "Prunus spec", "Pseudotsuga menziesii", "Quercus petraea", "Quercus robur", "Quercus rubra", "Tilia spec"]
@@ -346,7 +355,7 @@ def makeAvgEviGraph(treeTypes, msNames, allImagesData):
               currTreeImagesList.append(allImagesData[index])
             index += 1
         print(len(currTreeImagesList))
-        eviAveragesPerTreeList.append(calculateEviMean(currTreeImagesList))
+        eviAveragesPerTreeList.append(calculateEviMean(currTreeImagesList, True))
 
     paired_lists = list(zip(eviAveragesPerTreeList, treeLabels))
 
@@ -370,8 +379,9 @@ def makeAvgEviGraph(treeTypes, msNames, allImagesData):
     plt.title("Mean EVI for Species Classes")
     plt.savefig("graphs/evi_mean.png")
 
-def calculateNdwiMean(imageData):
+def calculateNdwiMean(imageData, averagePixels):
     ndwiArray = []
+    ndwiArray_notAvg = []
     invalidImgCounter = 0
     for currImage in imageData:
         #imageArray = imageArray[np.nonzero(currImage[:,:,1] + imageArray[:,:,3])]    
@@ -386,10 +396,14 @@ def calculateNdwiMean(imageData):
             continue
         #print(np_imageNdwi)
         ndwiArray.append(np_imageNdwi.mean())
+        ndwiArray_notAvg(np_imageNdwi)
 
-    np_avgImgNdwi = np.array(ndwiArray).mean()
+    if averagePixels:
+        np_avgImgNdwi = np.array(ndwiArray).mean()
     
-    return np_avgImgNdwi
+        return np_avgImgNdwi
+    else:
+        return np.array(ndwiArray_notAvg)
 
 def makeAvgNdwiGraph(treeTypes, msNames, allImagesData):
     treeLabels = ["Abies alba", "Acer pseudoplatanus", "Alnus spec", "Betula spec", "Cleared", "Fagus sylvatica", "Fraxinus excelsior", "Larix decidua", "Larix kaempferi", "Picea abies", "Pinus nigra", "Pinus strobus", "Pinus sylvestris", "Populus spec", "Prunus spec", "Pseudotsuga menziesii", "Quercus petraea", "Quercus robur", "Quercus rubra", "Tilia spec"]
@@ -405,7 +419,7 @@ def makeAvgNdwiGraph(treeTypes, msNames, allImagesData):
               currTreeImagesList.append(allImagesData[index])
             index += 1
         print(len(currTreeImagesList))
-        ndwiAveragesPerTreeList.append(calculateNdwiMean(currTreeImagesList))
+        ndwiAveragesPerTreeList.append(calculateNdwiMean(currTreeImagesList, True))
 
     paired_lists = list(zip(ndwiAveragesPerTreeList, treeLabels))
 
@@ -430,8 +444,9 @@ def makeAvgNdwiGraph(treeTypes, msNames, allImagesData):
     plt.savefig("graphs/ndwi_mean.png")
     # TODO: turn into 
 
-def calculateRendviMean(imageData):
+def calculateRendviMean(imageData, averagePixels):
     rendviArray = []
+    rendviArray_notAvg = []
     invalidImgCounter = 0
     for currImage in imageData:
         #changed into np array
@@ -444,10 +459,14 @@ def calculateRendviMean(imageData):
             continue
         #print(np_imageRendvi)
         rendviArray.append(np_imageRendvi.mean())
-
-    np_avgImgRendvi = np.array(rendviArray).mean()
+        rendviArray_notAvg.append(np_imageRendvi)
     
-    return np_avgImgRendvi
+    if averagePixels:
+        np_avgImgRendvi = np.array(rendviArray).mean()
+         
+        return np_avgImgRendvi
+    else:
+        return np.array(rendviArray_notAvg)
 
 def makeAvgRendviGraph(treeTypes, msNames, allImagesData):
     rendviAveragesPerTreeList = []
@@ -461,7 +480,7 @@ def makeAvgRendviGraph(treeTypes, msNames, allImagesData):
               currTreeImagesList.append(allImagesData[index])
             index += 1
         print(len(currTreeImagesList))
-        rendviAveragesPerTreeList.append(calculateRendviMean(currTreeImagesList))
+        rendviAveragesPerTreeList.append(calculateRendviMean(currTreeImagesList, True))
 
     paired_lists = list(zip(rendviAveragesPerTreeList, treeLabels))
 

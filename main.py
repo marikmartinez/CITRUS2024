@@ -65,7 +65,7 @@ if __name__ == '__main__':
         akClassifier.getAnnotations(msNames)
         akClassifier.train()
         akClassifier.save()
-    elif makeGraphs:
+    elif makeGraphs
         #make graphs
         dataPath = "data" + os.sep + "all_image_data.npz"
         loaded = np.load(dataPath)
